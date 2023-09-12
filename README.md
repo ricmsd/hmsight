@@ -1,6 +1,9 @@
 # hmsight
 hmsight is a website for displaying the temperature of CPUs, GPUs, and other devices. Temperature data is obtained via the Remote Web Server of [Libre Hardware Monitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) running on a PC.
 
+## Screenshot
+![hmsight](https://raw.githubusercontent.com/ricmsd/hmsight/main/docs/screenshot.png)
+
 ## How to use
 1. Install [Libre Hardware Monitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) on the PC you wish to monitor temperatures.
 1. Run Libre Hardware Monitor and check "Options -> Remote Web Server -> Run".
@@ -9,3 +12,5 @@ hmsight is a website for displaying the temperature of CPUs, GPUs, and other dev
 1. When the Preference dialog appears, enter the URL you just entered in the "Web Server URL" field.
 1. Close the dialog and monitoring will start. (Of course, the port for the URL you entered must be free.)
 
+## Tips
+If the browser is set to full-screen mode and the display size is adjusted by zooming, the gauge fits nicely on the screen.
