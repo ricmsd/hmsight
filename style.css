@@ -1,0 +1,56 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+:root {
+  --theme-dark-background: rgb(16, 12, 42);
+}
+body {
+  width: 100%;
+}
+body.dark {
+  background-color: var(--theme-dark-background);
+}
+body::-webkit-scrollbar {
+  display: none;
+}
+body .tooltip {
+  --bs-tooltip-font-size: 11px;
+  --bs-tooltip-border-radius: 3px;
+  --bs-tooltip-padding-x: 5px;
+  --bs-tooltip-padding-y: 3px;
+  --bs-tooltip-opacity: 0.7;
+}
+#cpu-container {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+#cpu-name {
+  width: 100%;
+  text-align: center;
+  font-family: "Microsoft YaHei";
+  font-size: 1.5rem;
+  font-style: normal;
+  font-weight: 600;
+}
+.cpu-gauge {
+  width: 200px;
+  height: 200px;
+}
+
+#btn-preferences {
+  position: fixed;
+  bottom: 0.5rem;
+  right: 0.5rem;
+}
+
+#modal-preferences.modal {
+  --bs-modal-header-border-width: 0px;
+  --bs-modal-footer-border-width: 0px;
+}
+#modal-preferences.modal .form-check-input:checked {
+  background-color: var(--bs-form-check-bg);
+  border-color: var(--bs-border-width);
+}
