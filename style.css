@@ -21,31 +21,31 @@ body .tooltip {
   --bs-tooltip-padding-y: 3px;
   --bs-tooltip-opacity: 0.7;
 }
-#cpu-container {
+#spinner-body-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#gauge-container {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
 }
-#cpu-name {
-  width: 100%;
-  text-align: center;
-  font-family: "Microsoft YaHei";
-  font-size: 1.5rem;
-  font-style: normal;
-  font-weight: 600;
-}
-.cpu-gauge {
+.gauge {
   width: 200px;
   height: 200px;
 }
-
 #btn-preferences {
   position: fixed;
   bottom: 0.5rem;
   right: 0.5rem;
 }
-
 #modal-preferences.modal {
   --bs-modal-header-border-width: 0px;
   --bs-modal-footer-border-width: 0px;

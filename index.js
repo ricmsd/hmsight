@@ -1,22 +1,28 @@
-function getHsl(value) {
-  const h = 240 - 240 * (value / 100)
+function getTempHsl(value) {
+  // TODO: change color range
+  const h = 240 - 240 * (value / 100);
   return 'hsl(' + h + ',85%,50%)';
 }
-function getBorderHsl(value) {
-  const h = 240 - 240 * (value / 100)
+
+function getTempTextBorderHsl(value) {
+  const h = 240 - 240 * (value / 100);
   return 'hsl(' + h + ',85%,40%)';
 }
-function getShadowHsl(value) {
-  const h = 240 - 240 * (value / 100)
+
+function getTempShadowHsl(value) {
+  const h = 240 - 240 * (value / 100);
   return 'hsl(' + h + ',85%,50%)';
 }
+
 function getAxisLineColor() {
   const theme = localStorage.getItem('preference-theme') || 'light';
   return theme == 'dark' ? '#43484d' : '#e6ebf8';
 }
-function getTitle(count, text) {
+
+function getGaugeTitle(count, text) {
   let match = text.match(/^CPU Core #([0-9]+)$/);
   if (match) {
+    // TODO: multiple CPUs
     return '{value|\uF2D6}\n{n|Core #' + match[1] + '}';
   }
   if (text == 'GPU Core') {
@@ -33,11 +39,7 @@ function getTitle(count, text) {
   }
   return '{value|}\n{n|unknown}';
 }
-function getTheme() {
-  //const toggle = document.getElementsByName('toggle')[0];
-  //return toggle.checked ? 'dark' : null;
-  return null;
-}
+
 function createTooltip(element, text) {
   element.setAttribute('data-bs-title', text);
   new bootstrap.Tooltip(element, {
@@ -46,9 +48,9 @@ function createTooltip(element, text) {
   });
 }
 
-function createCPUGauge(element, count, label, tempValue, load1Value, load2Value) {
-  let chart = echarts.init(element, getTheme(), {
-    renderer: 'svg'
+function createGauge(element, count, label, tempValue, load1Value, load2Value) {
+  let chart = echarts.init(element, null, {
+    renderer: 'svg' // For beautiful zooming
   });
   let animationDuration = 900;
   let option = {
@@ -65,36 +67,21 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
         animation: true,
         animationDuration: animationDuration,
         itemStyle: {
-          color: getHsl(tempValue),
+          color: getTempHsl(tempValue),
           shadowBlur: 3,
-          shadowColor: getShadowHsl(tempValue),
+          shadowColor: getTempShadowHsl(tempValue),
         },
         pointer: {
           show: false,
-          length: '12%',
-          icon: 'path://M12.8,0.7l12,40.1H0.7L12.8,0.7z',
-          // offsetCenter: [0, '-102%'],
-          offsetCenter: [0, '-62%'],
-          itemStyle: {
-            color: '#999',
-          }
         },
         anchor: {
           show: false,
-          showAbove: true,
-          size: 20,
-          itemStyle: {
-            borderWidth: 6,
-            borderColor: getHsl(tempValue)
-          }
         },
-  
         progress: {
           show: true,
           width: 8,
           roundCap: true,
         },
-  
         axisLine: {
           roundCap: true,
           lineStyle: {
@@ -124,7 +111,6 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
           color: '#999',
           fontSize: 11
         },
-  
         title: {
           show: true,
           offsetCenter: [0, -16],
@@ -146,12 +132,9 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
           lineHeight: 40,
           borderRadius: 8,
           offsetCenter: [6, '50%'],
-          // fontSize: 25,
-          // fontWeight: 'bolder',
-          // formatter: '{value} °C',
           color: 'inherit',
           textBorderWidth: 1,
-          textBorderColor: getBorderHsl(tempValue),
+          textBorderColor: getTempTextBorderHsl(tempValue),
           formatter: function(value) {
             return '{value|' + value.toFixed(0) + '}{unit|°C}';
           },
@@ -169,7 +152,7 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
         },
         data: [
           {
-            name: getTitle(count, label),
+            name: getGaugeTitle(count, label),
             value: tempValue,
           },
         ]
@@ -191,12 +174,10 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
         pointer: {
           show: false,
         },
-  
         progress: {
           show: true,
           width: 2,
         },
-  
         axisLine: {
           show: false,
         },
@@ -209,7 +190,6 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
         axisLabel: {
           show: false,
         },
-  
         title: {
           show: false,
         },
@@ -239,12 +219,10 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
         pointer: {
           show: false,
         },
-  
         progress: {
           show: true,
           width: 2,
         },
-  
         axisLine: {
           show: false,
         },
@@ -257,7 +235,6 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
         axisLabel: {
           show: false,
         },
-  
         title: {
           show: false,
         },
@@ -275,12 +252,14 @@ function createCPUGauge(element, count, label, tempValue, load1Value, load2Value
   chart.setOption(option);
 }
 
-function getLoadMap(loadProp) {
+function updateGauge() {
+  // TODO
+}
+
+function getCPULoadMap(loadProp) {
   const loadMap = {};
   for (let load of loadProp.Children) {
     const match = load.Text.match(/^(CPU Core #[0-9]+)(| Thread #([0-9]+))$/);
-    // console.log(match);
-    //console.log(load);
     if (!match) {
       continue;
     }
@@ -301,30 +280,28 @@ function createCPUElement(data) {
       continue;
     }
     cpuCount++;
-    // $("#cpu-name").text(component.Text);
     let loadMap = {};
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/load.png')) {
         continue;
       }
-      loadMap = getLoadMap(prop);
+      loadMap = getCPULoadMap(prop);
     }
     for (let prop of component.Children) {
-      if (!prop.ImageURL.endsWith('temperature.png')) {
+      if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
       }
       for (let temp of prop.Children) {
         if (!temp.Text.match(/^CPU Core #[0-9]+$/)) {
           continue;
         }
-        // console.log(temp);
-        let gauge = document.createElement('div');
+        const gauge = document.createElement('div');
         gauge.id = 'cpu-' + temp.id;
-        gauge.className = 'cpu-gauge';
-        $("#cpu-container").append(gauge);
+        gauge.className = 'gauge';
+        $("#gauge-container").append(gauge);
         createTooltip(gauge, component.Text);
-        let tempValue = Number(temp.Value.split(" ")[0]);
-        createCPUGauge(gauge, cpuCount, temp.Text, tempValue,
+        const tempValue = Number(temp.Value.split(" ")[0]);
+        createGauge(gauge, cpuCount, temp.Text, tempValue,
           loadMap[temp.Text][0], loadMap[temp.Text][1]);
       }
     }
@@ -343,27 +320,26 @@ function updateCPUElement(data) {
       if (!prop.ImageURL.endsWith('/load.png')) {
         continue;
       }
-      loadMap = getLoadMap(prop);
+      loadMap = getCPULoadMap(prop);
     }
     for (let prop of component.Children) {
-      if (!prop.ImageURL.endsWith('temperature.png')) {
+      if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
       }
       for (let temp of prop.Children) {
         if (!temp.Text.match(/^CPU Core #[0-9]+$/)) {
           continue;
         }
-        // console.log(temp);
-        let dom = document.getElementById("cpu-" + temp.id);
-        let tempValue = Number(temp.Value.split(" ")[0]);
-        let color = getHsl(tempValue);
-        let chart = echarts.getInstanceByDom(dom);
+        const dom = document.getElementById("cpu-" + temp.id);
+        const tempValue = Number(temp.Value.split(" ")[0]);
+        const color = getTempHsl(tempValue);
+        const chart = echarts.getInstanceByDom(dom);
         chart.setOption({
           series: [
             {
               itemStyle: {
                 color: color,
-                shadowColor: getShadowHsl(tempValue),
+                shadowColor: getTempShadowHsl(tempValue),
               },
               anchor: {
                 itemStyle: {
@@ -371,11 +347,11 @@ function updateCPUElement(data) {
                 }
               },
               detail: {
-                textBorderColor: getBorderHsl(tempValue),
+                textBorderColor: getTempTextBorderHsl(tempValue),
               },
               data: [
                 {
-                  name: getTitle(cpuCount, temp.Text),
+                  name: getGaugeTitle(cpuCount, temp.Text),
                   value: tempValue,
                 },
               ]
@@ -404,25 +380,27 @@ function updateCPUElement(data) {
 function createGPUElement(data) {
   let gpuCount = 0;
   for (let component of data.Children[0].Children) {
-    if (!component.ImageURL.endsWith('/nvidia.png')) {
+    if (!component.ImageURL.endsWith('/nvidia.png') &&
+      !component.ImageURL.endsWith('/ati.png') &&
+      !component.ImageURL.endsWith('/intel.png')) {
       continue;
     }
     gpuCount++;
     for (let prop of component.Children) {
-      if (!prop.ImageURL.endsWith('temperature.png')) {
+      if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
       }
       for (let temp of prop.Children) {
         if (!temp.Text.match(/^GPU (Core|Hot Spot)$/)) {
           continue;
         }
-        let gauge = document.createElement('div');
+        const gauge = document.createElement('div');
         gauge.id = 'gpu-' + temp.id;
-        gauge.className = 'cpu-gauge';
-        $("#cpu-container").append(gauge);
+        gauge.className = 'gauge';
+        $("#gauge-container").append(gauge);
         createTooltip(gauge, component.Text);
-        let tempValue = Number(temp.Value.split(" ")[0]);
-        createCPUGauge(gauge, gpuCount, temp.Text, tempValue, 0, 0);
+        const tempValue = Number(temp.Value.split(" ")[0]);
+        createGauge(gauge, gpuCount, temp.Text, tempValue, 0, 0);
       }
     }
   }
@@ -431,28 +409,30 @@ function createGPUElement(data) {
 function updateGPUElement(data) {
   let gpuCount = 0;
   for (let component of data.Children[0].Children) {
-    if (!component.ImageURL.endsWith('/nvidia.png')) {
+    if (!component.ImageURL.endsWith('/nvidia.png') &&
+      !component.ImageURL.endsWith('/ati.png') &&
+      !component.ImageURL.endsWith('/intel.png')) {
       continue;
     }
     gpuCount++;
     for (let prop of component.Children) {
-      if (!prop.ImageURL.endsWith('temperature.png')) {
+      if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
       }
       for (let temp of prop.Children) {
         if (!temp.Text.match(/^GPU (Core|Hot Spot)$/)) {
           continue;
         }
-        let dom = document.getElementById("gpu-" + temp.id);
-        let tempValue = Number(temp.Value.split(" ")[0]);
-        let color = getHsl(tempValue);
-        let chart = echarts.getInstanceByDom(dom);
+        const dom = document.getElementById("gpu-" + temp.id);
+        const tempValue = Number(temp.Value.split(" ")[0]);
+        const color = getTempHsl(tempValue);
+        const chart = echarts.getInstanceByDom(dom);
         chart.setOption({
           series: [
             {
               itemStyle: {
                 color: color,
-                shadowColor: getShadowHsl(tempValue),
+                shadowColor: getTempShadowHsl(tempValue),
               },
               anchor: {
                 itemStyle: {
@@ -460,11 +440,11 @@ function updateGPUElement(data) {
                 }
               },
               detail: {
-                textBorderColor: getBorderHsl(tempValue),
+                textBorderColor: getTempTextBorderHsl(tempValue),
               },
               data: [
                 {
-                  name: getTitle(gpuCount, temp.Text),
+                  name: getGaugeTitle(gpuCount, temp.Text),
                   value: tempValue,
                 },
               ]
@@ -498,12 +478,12 @@ function createMotherboardElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      let gauge = document.createElement('div');
+      const gauge = document.createElement('div');
       gauge.id = 'motherboard';
-      gauge.className = 'cpu-gauge';
-      $("#cpu-container").append(gauge);
+      gauge.className = 'gauge';
+      $("#gauge-container").append(gauge);
       createTooltip(gauge, component.Text);
-      createCPUGauge(gauge, 1, 'Motherboard', maxTempValue, 0, 0);
+      createGauge(gauge, 1, 'Motherboard', maxTempValue, 0, 0);
     }
     break;
   }
@@ -531,15 +511,15 @@ function updateMotherboardElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      let dom = document.getElementById("motherboard");
-      let color = getHsl(maxTempValue);
-      let chart = echarts.getInstanceByDom(dom);
+      const dom = document.getElementById("motherboard");
+      const color = getTempHsl(maxTempValue);
+      const chart = echarts.getInstanceByDom(dom);
       chart.setOption({
         series: [
           {
             itemStyle: {
               color: color,
-              shadowColor: getShadowHsl(maxTempValue),
+              shadowColor: getTempShadowHsl(maxTempValue),
             },
             anchor: {
               itemStyle: {
@@ -547,11 +527,11 @@ function updateMotherboardElement(data) {
               }
             },
             detail: {
-              textBorderColor: getBorderHsl(maxTempValue),
+              textBorderColor: getTempTextBorderHsl(maxTempValue),
             },
             data: [
               {
-                name: getTitle(1, 'Motherboard'),
+                name: getGaugeTitle(1, 'Motherboard'),
                 value: maxTempValue,
               },
             ]
@@ -582,12 +562,12 @@ function createStorageElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      let gauge = document.createElement('div');
+      const gauge = document.createElement('div');
       gauge.id = 'storage-' + component.id;
-      gauge.className = 'cpu-gauge';
-      $("#cpu-container").append(gauge);
+      gauge.className = 'gauge';
+      $("#gauge-container").append(gauge);
       createTooltip(gauge, component.Text);
-      createCPUGauge(gauge, storageCount, 'Storage', maxTempValue, 0, 0);
+      createGauge(gauge, storageCount, 'Storage', maxTempValue, 0, 0);
     }
   }
 }
@@ -612,15 +592,15 @@ function updateStorageElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      let dom = document.getElementById("storage-" + component.id);
-      let color = getHsl(maxTempValue);
-      let chart = echarts.getInstanceByDom(dom);
+      const dom = document.getElementById("storage-" + component.id);
+      const color = getTempHsl(maxTempValue);
+      const chart = echarts.getInstanceByDom(dom);
       chart.setOption({
         series: [
           {
             itemStyle: {
               color: color,
-              shadowColor: getShadowHsl(maxTempValue),
+              shadowColor: getTempShadowHsl(maxTempValue),
             },
             anchor: {
               itemStyle: {
@@ -628,11 +608,11 @@ function updateStorageElement(data) {
               }
             },
             detail: {
-              textBorderColor: getBorderHsl(maxTempValue),
+              textBorderColor: getTempTextBorderHsl(maxTempValue),
             },
             data: [
               {
-                name: getTitle(storageCount, 'Storage'),
+                name: getGaugeTitle(storageCount, 'Storage'),
                 value: maxTempValue,
               },
             ]
@@ -643,21 +623,25 @@ function updateStorageElement(data) {
   }
 }
 
-var intervalId = null;
+var pollingIntervalId = null;
 
 function startMonitoring() {
   const dataURL = localStorage.getItem('preference-url') + '/data.json';
 
+  $('#spinner-body-container').show();
   $.ajax({
     type: "GET",
     url: dataURL,
     dataType: "json",
   }).done(function(data) {
+    $('#spinner-body-container').hide();
+
     createCPUElement(data);
     createGPUElement(data);
     createMotherboardElement(data);
     createStorageElement(data);
-    intervalId = setInterval(function() {
+
+    pollingIntervalId = setInterval(function() {
       $.ajax({
         type: "GET",
         url: dataURL,
@@ -667,27 +651,31 @@ function startMonitoring() {
         updateGPUElement(data);
         updateMotherboardElement(data);
         updateStorageElement(data);
+      }).fail(function(data) {
+        // TODO
       });
-    }, 1000);
+    }, 1000); // TODO: make it customizable
   }).fail(function(data) {
+    $('#spinner-body-container').hide();
+
     $('#preference-url').addClass('is-invalid');
     $('#btn-preferences').trigger('click');
   });
 }
 
 function clearMonitoring() {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
+  if (pollingIntervalId) {
+    clearInterval(pollingIntervalId);
+    pollingIntervalId = null;
   }
-  $('#cpu-container').empty();
+  $('#gauge-container').empty();
   $('#preference-url').removeClass('is-invalid');
 }
 
 function changeColor() {
   const theme = localStorage.getItem('preference-theme') || 'light';
   $('html').attr('data-bs-theme', theme);
-  $('.cpu-gauge').each(function() {
+  $('.gauge').each(function() {
     let chart = echarts.getInstanceByDom(this);
     chart.setOption({
       series: [
@@ -697,26 +685,11 @@ function changeColor() {
               color: [[1, getAxisLineColor()]]
             }
           },
-         }
+        }
       ]
     });
   });
 }
-
-document.getElementById('modal-preferences').addEventListener('hidden.bs.modal', (event) => {
-  const serverURL = ($('#preference-url').val() || '').trim();
-  localStorage.setItem('preference-url', serverURL);
-
-  clearMonitoring();
-  startMonitoring();
-});
-
-$(document).ready(function() {
-  initializeColorMode();
-  initializeWebServerURL();
-
-  startMonitoring();
-});
 
 function initializeColorMode() {
   const theme = localStorage.getItem('preference-theme') || 'light';
@@ -737,3 +710,18 @@ function changeColorMode(checked) {
   localStorage.setItem('preference-theme', checked ? 'dark' : 'light');
   changeColor();
 }
+
+document.getElementById('modal-preferences').addEventListener('hidden.bs.modal', (event) => {
+  const serverURL = ($('#preference-url').val() || '').trim();
+  localStorage.setItem('preference-url', serverURL);
+
+  clearMonitoring();
+  startMonitoring();
+});
+
+$(document).ready(function() {
+  initializeColorMode();
+  initializeWebServerURL();
+
+  startMonitoring();
+});
