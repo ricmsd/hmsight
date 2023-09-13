@@ -1,22 +1,25 @@
+function tempToHslHue(value) {
+  // ~ 10°C => 240 deg(HSL blue)
+  // 10°C ~ 90°C => 240 deg(HSL blue) ~ 0 deg(HSL red)
+  // 90°C ~ => 0 deg(HSL red)
+  value = Math.max(Math.min(value, 90), 10) - 10;
+  return 240 - 240 * (value / 80);
+}
+
 function getTempHsl(value) {
-  // TODO: change color range
-  const h = 240 - 240 * (value / 100);
-  return 'hsl(' + h + ',85%,50%)';
+  return 'hsl(' + tempToHslHue(value) + ',85%,50%)';
 }
 
 function getTempTextBorderHsl(value) {
-  const h = 240 - 240 * (value / 100);
-  return 'hsl(' + h + ',85%,40%)';
+  return 'hsl(' + tempToHslHue(value) + ',85%,40%)';
 }
 
 function getTempShadowHsl(value) {
-  const h = 240 - 240 * (value / 100);
-  return 'hsl(' + h + ',85%,50%)';
+  return 'hsl(' + tempToHslHue(value) + ',85%,50%)';
 }
 
 function getAxisLineColor() {
-  const theme = localStorage.getItem('preference-theme') || 'light';
-  return theme == 'dark' ? '#43484d' : '#e6ebf8';
+  return localStorage.getItem('preference-theme') == 'dark' ? '#43484d' : '#e6ebf8';
 }
 
 function getGaugeTitle(count, text) {
@@ -52,7 +55,7 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
   let chart = echarts.init(element, null, {
     renderer: 'svg' // For beautiful zooming
   });
-  let animationDuration = 900;
+  let animationDuration = 900; // TODO: Change this value as the interval value is changed.
   let option = {
     series: [
       {
@@ -252,8 +255,47 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
   chart.setOption(option);
 }
 
-function updateGauge() {
-  // TODO
+function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
+  const color = getTempHsl(tempValue);
+  const chart = echarts.getInstanceByDom(element);
+  chart.setOption({
+    series: [
+      {
+        itemStyle: {
+          color: color,
+          shadowColor: getTempShadowHsl(tempValue),
+        },
+        anchor: {
+          itemStyle: {
+            borderColor: color
+          }
+        },
+        detail: {
+          textBorderColor: getTempTextBorderHsl(tempValue),
+        },
+        data: [
+          {
+            name: getGaugeTitle(count, label),
+            value: tempValue,
+          },
+        ]
+      },
+      {
+        data: [
+          {
+            value: load1Value
+          }
+        ]
+      },
+      {
+        data: [
+          {
+            value: load2Value
+          }
+        ]
+      }
+    ]
+  });
 }
 
 function getCPULoadMap(loadProp) {
@@ -330,48 +372,10 @@ function updateCPUElement(data) {
         if (!temp.Text.match(/^CPU Core #[0-9]+$/)) {
           continue;
         }
-        const dom = document.getElementById("cpu-" + temp.id);
+        const gauge = document.getElementById("cpu-" + temp.id);
         const tempValue = Number(temp.Value.split(" ")[0]);
-        const color = getTempHsl(tempValue);
-        const chart = echarts.getInstanceByDom(dom);
-        chart.setOption({
-          series: [
-            {
-              itemStyle: {
-                color: color,
-                shadowColor: getTempShadowHsl(tempValue),
-              },
-              anchor: {
-                itemStyle: {
-                  borderColor: color
-                }
-              },
-              detail: {
-                textBorderColor: getTempTextBorderHsl(tempValue),
-              },
-              data: [
-                {
-                  name: getGaugeTitle(cpuCount, temp.Text),
-                  value: tempValue,
-                },
-              ]
-            },
-            {
-              data: [
-                {
-                  value: loadMap[temp.Text][0]
-                }
-              ]
-            },
-            {
-              data: [
-                {
-                  value: loadMap[temp.Text][1]
-                }
-              ]
-            }
-          ]
-        });
+        updateGauge(gauge, cpuCount, temp.Text, tempValue,
+          loadMap[temp.Text][0], loadMap[temp.Text][1]);
       }
     }
   }
@@ -423,34 +427,9 @@ function updateGPUElement(data) {
         if (!temp.Text.match(/^GPU (Core|Hot Spot)$/)) {
           continue;
         }
-        const dom = document.getElementById("gpu-" + temp.id);
+        const gauge = document.getElementById("gpu-" + temp.id);
         const tempValue = Number(temp.Value.split(" ")[0]);
-        const color = getTempHsl(tempValue);
-        const chart = echarts.getInstanceByDom(dom);
-        chart.setOption({
-          series: [
-            {
-              itemStyle: {
-                color: color,
-                shadowColor: getTempShadowHsl(tempValue),
-              },
-              anchor: {
-                itemStyle: {
-                  borderColor: color
-                }
-              },
-              detail: {
-                textBorderColor: getTempTextBorderHsl(tempValue),
-              },
-              data: [
-                {
-                  name: getGaugeTitle(gpuCount, temp.Text),
-                  value: tempValue,
-                },
-              ]
-            }
-          ]
-        });
+        updateGauge(gauge, gpuCount, temp.Text, tempValue, 0, 0);
       }
     }
   }
@@ -474,7 +453,6 @@ function createMotherboardElement(data) {
         if (!temp.Text.match(/^Temperature #[0-9]+$/)) {
           continue;
         }
-        // console.log(temp);
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
@@ -511,33 +489,8 @@ function updateMotherboardElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      const dom = document.getElementById("motherboard");
-      const color = getTempHsl(maxTempValue);
-      const chart = echarts.getInstanceByDom(dom);
-      chart.setOption({
-        series: [
-          {
-            itemStyle: {
-              color: color,
-              shadowColor: getTempShadowHsl(maxTempValue),
-            },
-            anchor: {
-              itemStyle: {
-                borderColor: color
-              }
-            },
-            detail: {
-              textBorderColor: getTempTextBorderHsl(maxTempValue),
-            },
-            data: [
-              {
-                name: getGaugeTitle(1, 'Motherboard'),
-                value: maxTempValue,
-              },
-            ]
-          }
-        ]
-      });
+      const gauge = document.getElementById("motherboard");
+      updateGauge(gauge, 1, 'Motherboard', maxTempValue, 0, 0);
     }
     break;
   }
@@ -592,33 +545,8 @@ function updateStorageElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      const dom = document.getElementById("storage-" + component.id);
-      const color = getTempHsl(maxTempValue);
-      const chart = echarts.getInstanceByDom(dom);
-      chart.setOption({
-        series: [
-          {
-            itemStyle: {
-              color: color,
-              shadowColor: getTempShadowHsl(maxTempValue),
-            },
-            anchor: {
-              itemStyle: {
-                borderColor: color
-              }
-            },
-            detail: {
-              textBorderColor: getTempTextBorderHsl(maxTempValue),
-            },
-            data: [
-              {
-                name: getGaugeTitle(storageCount, 'Storage'),
-                value: maxTempValue,
-              },
-            ]
-          }
-        ]
-      });
+      const gauge = document.getElementById("storage-" + component.id);
+      updateGauge(gauge, storageCount, 'Storage', maxTempValue, 0, 0);
     }
   }
 }
@@ -673,7 +601,7 @@ function clearMonitoring() {
 }
 
 function changeColor() {
-  const theme = localStorage.getItem('preference-theme') || 'light';
+  const theme = localStorage.getItem('preference-theme');
   $('html').attr('data-bs-theme', theme);
   $('.gauge').each(function() {
     let chart = echarts.getInstanceByDom(this);
@@ -692,7 +620,11 @@ function changeColor() {
 }
 
 function initializeColorMode() {
-  const theme = localStorage.getItem('preference-theme') || 'light';
+  let theme = localStorage.getItem('preference-theme');
+  if (!theme) {
+    theme = 'light';
+    localStorage.setItem('preference-theme', theme);
+  }
   $('#preference-theme').attr('checked', theme == 'dark');
   changeColor();
 }
