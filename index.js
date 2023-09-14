@@ -6,15 +6,25 @@ function tempToHslHue(value) {
   return 240 - 240 * (value / 80);
 }
 
-function getTempHsl(value) {
+function getTempColor(value) {
+  if (Number.isNaN(value)) {
+    return getAxisLineColor();
+  }
   return 'hsl(' + tempToHslHue(value) + ',85%,50%)';
 }
 
-function getTempTextBorderHsl(value) {
+function getTempTextBorderColor(value) {
+  if (Number.isNaN(value)) {
+    // TODO: Slightly darker color
+    return getAxisLineColor();
+  }
   return 'hsl(' + tempToHslHue(value) + ',85%,40%)';
 }
 
-function getTempShadowHsl(value) {
+function getTempShadowColor(value) {
+  if (Number.isNaN(value)) {
+    return getAxisLineColor();
+  }
   return 'hsl(' + tempToHslHue(value) + ',85%,50%)';
 }
 
@@ -34,11 +44,20 @@ function getGaugeTitle(count, text) {
   if (text == 'GPU Hot Spot') {
     return '{value|\uF6E2}\n{n|#' + count + ' Hot Spot}';
   }
+  if (text == 'GPU N/A') {
+    return '{value|\uF6E2}\n{n|#' + count + '}';
+  }
   if (text == 'Motherboard') {
     return '{value|\uF6E7}\n{n|Max}'
   }
+  if (text == 'Motherboard N/A') {
+    return '{value|\uF6E7}\n{n|}'
+  }
   if (text == 'Storage') {
     return '{value|\uF412}\n{n|#' + count + ' Max}'
+  }
+  if (text == 'Storage N/A') {
+    return '{value|\uF412}\n{n|#' + count + '}'
   }
   return '{value|}\n{n|unknown}';
 }
@@ -70,9 +89,9 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
         animation: true,
         animationDuration: animationDuration,
         itemStyle: {
-          color: getTempHsl(tempValue),
+          color: getTempColor(tempValue),
           shadowBlur: 3,
-          shadowColor: getTempShadowHsl(tempValue),
+          shadowColor: getTempShadowColor(tempValue),
         },
         pointer: {
           show: false,
@@ -134,22 +153,25 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
           valueAnimation: true,
           lineHeight: 40,
           borderRadius: 8,
-          offsetCenter: [6, '50%'],
+          offsetCenter: [Number.isNaN(tempValue) ? 0 : 6, '50%'],
           color: 'inherit',
           textBorderWidth: 1,
-          textBorderColor: getTempTextBorderHsl(tempValue),
+          textBorderColor: getTempTextBorderColor(tempValue),
           formatter: function(value) {
+            if (Number.isNaN(value)) {
+              return '{value|N/A}';
+            }
             return '{value|' + value.toFixed(0) + '}{unit|°C}';
           },
           rich: {
             value: {
-              fontSize: 36,
+              fontSize: Number.isNaN(tempValue) ? 24 : 36,
               fontWeight: 'bolder',
             },
             unit: {
               fontSize: 12,
               fontWeight: 'bolder',
-              padding: [0, 0, -8, 2]
+              padding: [0, 0, -20, 2]
             }
           }
         },
@@ -256,14 +278,14 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
 }
 
 function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
-  const color = getTempHsl(tempValue);
+  const color = getTempColor(tempValue);
   const chart = echarts.getInstanceByDom(element);
   chart.setOption({
     series: [
       {
         itemStyle: {
           color: color,
-          shadowColor: getTempShadowHsl(tempValue),
+          shadowColor: getTempShadowColor(tempValue),
         },
         anchor: {
           itemStyle: {
@@ -271,7 +293,7 @@ function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
           }
         },
         detail: {
-          textBorderColor: getTempTextBorderHsl(tempValue),
+          textBorderColor: getTempTextBorderColor(tempValue),
         },
         data: [
           {
@@ -296,6 +318,20 @@ function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
       }
     ]
   });
+}
+
+function createGaugeElement(id, count, label, tempValue, load1Value, load2Value, tooltip) {
+  const gauge = document.createElement('div');
+  gauge.id = id;
+  gauge.className = 'gauge';
+  $("#gauge-container").append(gauge);
+  createTooltip(gauge, tooltip);
+  createGauge(gauge, count, label, tempValue, load1Value, load2Value);
+}
+
+function updateGaugeElement(id, count, label, tempValue, load1Value, load2Value) {
+  const gauge = document.getElementById(id);
+  updateGauge(gauge, count, label, tempValue, load1Value, load2Value);
 }
 
 function getCPULoadMap(loadProp) {
@@ -337,14 +373,9 @@ function createCPUElement(data) {
         if (!temp.Text.match(/^CPU Core #[0-9]+$/)) {
           continue;
         }
-        const gauge = document.createElement('div');
-        gauge.id = 'cpu-' + temp.id;
-        gauge.className = 'gauge';
-        $("#gauge-container").append(gauge);
-        createTooltip(gauge, component.Text);
         const tempValue = Number(temp.Value.split(" ")[0]);
-        createGauge(gauge, cpuCount, temp.Text, tempValue,
-          loadMap[temp.Text][0], loadMap[temp.Text][1]);
+        createGaugeElement('cpu-' + temp.id, cpuCount, temp.Text, tempValue,
+          loadMap[temp.Text][0], loadMap[temp.Text][1], component.Text);
       }
     }
   }
@@ -372,9 +403,8 @@ function updateCPUElement(data) {
         if (!temp.Text.match(/^CPU Core #[0-9]+$/)) {
           continue;
         }
-        const gauge = document.getElementById("cpu-" + temp.id);
         const tempValue = Number(temp.Value.split(" ")[0]);
-        updateGauge(gauge, cpuCount, temp.Text, tempValue,
+        updateGaugeElement('cpu-' + temp.id, cpuCount, temp.Text, tempValue,
           loadMap[temp.Text][0], loadMap[temp.Text][1]);
       }
     }
@@ -390,6 +420,7 @@ function createGPUElement(data) {
       continue;
     }
     gpuCount++;
+    let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
@@ -398,14 +429,15 @@ function createGPUElement(data) {
         if (!temp.Text.match(/^GPU (Core|Hot Spot)$/)) {
           continue;
         }
-        const gauge = document.createElement('div');
-        gauge.id = 'gpu-' + temp.id;
-        gauge.className = 'gauge';
-        $("#gauge-container").append(gauge);
-        createTooltip(gauge, component.Text);
         const tempValue = Number(temp.Value.split(" ")[0]);
-        createGauge(gauge, gpuCount, temp.Text, tempValue, 0, 0);
+        createGaugeElement('gpu-' + temp.id, gpuCount, temp.Text, tempValue,
+          0, 0, component.Text);
+        tempCount++;
       }
+    }
+    if (tempCount == 0) {
+      createGaugeElement('gpu-' + component.id, gpuCount, 'GPU N/A', Number.NaN,
+        0, 0, component.Text);
     }
   }
 }
@@ -427,9 +459,8 @@ function updateGPUElement(data) {
         if (!temp.Text.match(/^GPU (Core|Hot Spot)$/)) {
           continue;
         }
-        const gauge = document.getElementById("gpu-" + temp.id);
         const tempValue = Number(temp.Value.split(" ")[0]);
-        updateGauge(gauge, gpuCount, temp.Text, tempValue, 0, 0);
+        updateGaugeElement('gpu-' + temp.id, gpuCount, temp.Text, tempValue, 0, 0);
       }
     }
   }
@@ -441,9 +472,13 @@ function createMotherboardElement(data) {
       continue;
     }
     const chip = component.Children[0];
-    if (!chip.ImageURL.endsWith('/chip.png')) {
+    if (!chip || !chip.ImageURL.endsWith('/chip.png')) {
+      // Chipset not found.
+      createGaugeElement('motherboard', 1, 'Motherboard N/A', Number.NaN,
+        0, 0, component.Text);
       continue;
     }
+    let tempCount = 0;
     for (let prop of chip.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
@@ -456,12 +491,14 @@ function createMotherboardElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      const gauge = document.createElement('div');
-      gauge.id = 'motherboard';
-      gauge.className = 'gauge';
-      $("#gauge-container").append(gauge);
-      createTooltip(gauge, component.Text);
-      createGauge(gauge, 1, 'Motherboard', maxTempValue, 0, 0);
+      createGaugeElement('motherboard', 1, 'Motherboard', maxTempValue,
+        0, 0, component.Text);
+      tempCount++;
+    }
+    if (tempCount == 0) {
+      // Chipset found, but no temperature data.
+      createGaugeElement('motherboard', 1, 'Motherboard N/A', Number.NaN,
+        0, 0, component.Text);
     }
     break;
   }
@@ -473,7 +510,7 @@ function updateMotherboardElement(data) {
       continue;
     }
     const chip = component.Children[0];
-    if (!chip.ImageURL.endsWith('/chip.png')) {
+    if (!chip || !chip.ImageURL.endsWith('/chip.png')) {
       continue;
     }
     for (let prop of chip.Children) {
@@ -489,8 +526,7 @@ function updateMotherboardElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      const gauge = document.getElementById("motherboard");
-      updateGauge(gauge, 1, 'Motherboard', maxTempValue, 0, 0);
+      updateGaugeElement('motherboard', 1, 'Motherboard', maxTempValue, 0, 0);
     }
     break;
   }
@@ -503,24 +539,26 @@ function createStorageElement(data) {
       continue;
     }
     storageCount++;
+    let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
       }
       let maxTempValue = 0;
       for (let temp of prop.Children) {
-        if (!temp.Text.match(/^Temperature [0-9]+$/)) {
+        if (!temp.Text.match(/^Temperature(| [0-9]+)$/)) {
           continue;
         }
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      const gauge = document.createElement('div');
-      gauge.id = 'storage-' + component.id;
-      gauge.className = 'gauge';
-      $("#gauge-container").append(gauge);
-      createTooltip(gauge, component.Text);
-      createGauge(gauge, storageCount, 'Storage', maxTempValue, 0, 0);
+      createGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue,
+        0, 0, component.Text);
+      tempCount++;
+    }
+    if (tempCount == 0) {
+      createGaugeElement('storage-' + component.id, storageCount, 'Storage N/A', Number.NaN,
+        0, 0, component.Text);
     }
   }
 }
@@ -539,14 +577,13 @@ function updateStorageElement(data) {
 
       let maxTempValue = 0;
       for (let temp of prop.Children) {
-        if (!temp.Text.match(/^Temperature [0-9]+$/)) {
+        if (!temp.Text.match(/^Temperature(| [0-9]+)$/)) {
           continue;
         }
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      const gauge = document.getElementById("storage-" + component.id);
-      updateGauge(gauge, storageCount, 'Storage', maxTempValue, 0, 0);
+      updateGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue, 0, 0);
     }
   }
 }
