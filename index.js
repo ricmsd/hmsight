@@ -532,6 +532,22 @@ function updateMotherboardElement(data) {
   }
 }
 
+function getStorageLoad(component) {
+  for (let prop of component.Children) {
+    if (!prop.ImageURL.endsWith('/load.png')) {
+      continue;
+    }
+    for (let load of prop.Children) {
+      if (!load.Text.match(/^Total Activity$/)) {
+        // Only Total Activity supported
+        continue;
+      }
+      return Number(load.Value.split(" ")[0]);
+    }
+  }
+  return 0;
+}
+
 function createStorageElement(data) {
   let storageCount = 0;
   for (let component of data.Children[0].Children) {
@@ -539,6 +555,7 @@ function createStorageElement(data) {
       continue;
     }
     storageCount++;
+    let load1Value = getStorageLoad(component);
     let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
@@ -553,12 +570,12 @@ function createStorageElement(data) {
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
       createGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue,
-        0, 0, component.Text);
+        load1Value, 0, component.Text);
       tempCount++;
     }
     if (tempCount == 0) {
       createGaugeElement('storage-' + component.id, storageCount, 'Storage N/A', Number.NaN,
-        0, 0, component.Text);
+        load1Value, 0, component.Text);
     }
   }
 }
@@ -570,6 +587,8 @@ function updateStorageElement(data) {
       continue;
     }
     storageCount++;
+    let load1Value = getStorageLoad(component);
+    let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
@@ -583,7 +602,11 @@ function updateStorageElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      updateGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue, 0, 0);
+      updateGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue, load1Value, 0);
+      tempCount++;
+    }
+    if (tempCount == 0) {
+      updateGaugeElement('storage-' + component.id, storageCount, 'Storage N/A', Number.NaN, load1Value, 0);
     }
   }
 }
