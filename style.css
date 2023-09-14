@@ -45,6 +45,7 @@ body .tooltip {
   position: fixed;
   bottom: 0.5rem;
   right: 0.5rem;
+  --bs-btn-border-width: 0px;
 }
 #modal-preferences.modal {
   --bs-modal-header-border-width: 0px;

@@ -644,12 +644,14 @@ function startMonitoring() {
   const dataURL = localStorage.getItem('preference-url') + '/data.json';
 
   $('#spinner-body-container').show();
+  $('#btn-preferences').prop('disabled', true);
   $.ajax({
     type: "GET",
     url: dataURL,
     dataType: "json",
   }).done(function(data) {
     $('#spinner-body-container').hide();
+    $('#btn-preferences').prop('disabled', false);
 
     createCPUElement(data);
     createGPUElement(data);
@@ -672,6 +674,7 @@ function startMonitoring() {
     }, 1000); // TODO: make it customizable
   }).fail(function(data) {
     $('#spinner-body-container').hide();
+    $('#btn-preferences').prop('disabled', false);
 
     $('#preference-url').addClass('is-invalid');
     $('#btn-preferences').trigger('click');
