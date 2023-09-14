@@ -13,4 +13,5 @@ hmsight is a website for displaying the temperature of CPUs, GPUs, and other dev
 1. Close the dialog and monitoring will start. (Of course, the port for the URL you entered must be free.)
 
 ## Tips
-If the browser is set to full-screen mode and the display size is adjusted by zooming, the gauge fits nicely on the screen.
+- If the browser is set to full-screen mode and the display size is adjusted by zooming, the gauge fits nicely on the screen.
+- Normally, [GitHub Pages](https://ricmsd.github.io/hmsight/) can only connect to localhost server; to connect to non-localhost servers, you must change your browser's security settings (For Chrome, change "Insecure content" to "Allow" under "Privacy and security"). If you do not want to change the settings, clone the repository and open index.html directly in your browser.
