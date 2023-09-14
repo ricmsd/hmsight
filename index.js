@@ -182,6 +182,11 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
           },
         ]
       },
+    ]
+  };
+
+  if (!Number.isNaN(load1Value)) {
+    option.series.push(
       {
         type: 'gauge',
         center: ['50%', '60%'],
@@ -202,6 +207,7 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
         progress: {
           show: true,
           width: 2,
+          roundCap: true,
         },
         axisLine: {
           show: false,
@@ -226,7 +232,11 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
             value: load1Value,
           },
         ]
-      },
+      }
+    );
+  }
+  if (!Number.isNaN(load2Value)) {
+    option.series.push(
       {
         type: 'gauge',
         center: ['50%', '60%'],
@@ -247,6 +257,7 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
         progress: {
           show: true,
           width: 2,
+          roundCap: true,
         },
         axisLine: {
           show: false,
@@ -271,16 +282,16 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
             value: load2Value,
           },
         ]
-      },
-    ]
-  };
+      }
+    );
+  }
   chart.setOption(option);
 }
 
 function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
   const color = getTempColor(tempValue);
   const chart = echarts.getInstanceByDom(element);
-  chart.setOption({
+  const option = {
     series: [
       {
         itemStyle: {
@@ -301,14 +312,22 @@ function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
             value: tempValue,
           },
         ]
-      },
+      }
+    ]
+  };
+  if (!Number.isNaN(load1Value)) {
+    option.series.push(
       {
         data: [
           {
             value: load1Value
           }
         ]
-      },
+      }
+    );
+  }
+  if (!Number.isNaN(load2Value)) {
+    option.series.push(
       {
         data: [
           {
@@ -316,8 +335,9 @@ function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
           }
         ]
       }
-    ]
-  });
+    );
+  }
+  chart.setOption(option);
 }
 
 function createGaugeElement(id, count, label, tempValue, load1Value, load2Value, tooltip) {
@@ -345,12 +365,13 @@ function getCPULoadMap(component) {
       if (!match) {
         continue;
       }
+      const cpuCoreText = match[1];
       const loadValue = Number(load.Value.split(" ")[0]);
-      if (!loadMap[match[1]]) {
-        loadMap[match[1]] = [0, 0];
+      if (!loadMap[cpuCoreText]) {
+        loadMap[cpuCoreText] = [Number.NaN, Number.NaN];
       }
       const thread = match[3] ? parseInt(match[3]-1) : 0;
-      loadMap[match[1]][thread] = loadValue;
+      loadMap[cpuCoreText][thread] = loadValue;
     }
   }
   return loadMap;
@@ -447,15 +468,15 @@ function createGPUElement(data) {
           continue;
         }
         const tempValue = Number(temp.Value.split(" ")[0]);
-        const load1Value = temp.Text == 'GPU Core' ? gpuCoreLoadValue : 0;
+        const load1Value = temp.Text == 'GPU Core' ? gpuCoreLoadValue : Number.NaN;
         createGaugeElement('gpu-' + temp.id, gpuCount, temp.Text, tempValue,
-          load1Value, 0, component.Text);
+          load1Value, Number.NaN, component.Text);
         tempCount++;
       }
     }
     if (tempCount == 0) {
       createGaugeElement('gpu-' + component.id, gpuCount, 'GPU N/A', Number.NaN,
-        gpuCoreLoadValue, 0, component.Text);
+        gpuCoreLoadValue, Number.NaN, component.Text);
     }
   }
 }
@@ -480,15 +501,15 @@ function updateGPUElement(data) {
           continue;
         }
         const tempValue = Number(temp.Value.split(" ")[0]);
-        const load1Value = temp.Text == 'GPU Core' ? gpuCoreLoadValue : 0;
+        const load1Value = temp.Text == 'GPU Core' ? gpuCoreLoadValue : Number.NaN;
         updateGaugeElement('gpu-' + temp.id, gpuCount, temp.Text, tempValue,
-          load1Value, 0);
+          load1Value, Number.NaN);
         tempCount++;
       }
     }
     if (tempCount == 0) {
       updateGaugeElement('gpu-' + component.id, gpuCount, 'GPU N/A', Number.NaN,
-        gpuCoreLoadValue, 0);
+        gpuCoreLoadValue, Number.NaN);
     }
   }
 }
@@ -502,7 +523,7 @@ function createMotherboardElement(data) {
     if (!chip || !chip.ImageURL.endsWith('/chip.png')) {
       // Chipset not found.
       createGaugeElement('motherboard', 1, 'Motherboard N/A', Number.NaN,
-        0, 0, component.Text);
+        Number.NaN, Number.NaN, component.Text);
       continue;
     }
     let tempCount = 0;
@@ -519,13 +540,13 @@ function createMotherboardElement(data) {
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
       createGaugeElement('motherboard', 1, 'Motherboard', maxTempValue,
-        0, 0, component.Text);
+        Number.NaN, Number.NaN, component.Text);
       tempCount++;
     }
     if (tempCount == 0) {
       // Chipset found, but no temperature data.
       createGaugeElement('motherboard', 1, 'Motherboard N/A', Number.NaN,
-        0, 0, component.Text);
+        Number.NaN, Number.NaN, component.Text);
     }
     break;
   }
@@ -553,7 +574,8 @@ function updateMotherboardElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      updateGaugeElement('motherboard', 1, 'Motherboard', maxTempValue, 0, 0);
+      updateGaugeElement('motherboard', 1, 'Motherboard', maxTempValue,
+        Number.NaN, Number.NaN);
     }
     break;
   }
@@ -597,12 +619,12 @@ function createStorageElement(data) {
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
       createGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue,
-        load1Value, 0, component.Text);
+        load1Value, Number.NaN, component.Text);
       tempCount++;
     }
     if (tempCount == 0) {
       createGaugeElement('storage-' + component.id, storageCount, 'Storage N/A', Number.NaN,
-        load1Value, 0, component.Text);
+        load1Value, Number.NaN, component.Text);
     }
   }
 }
@@ -629,11 +651,13 @@ function updateStorageElement(data) {
         const tempValue = Number(temp.Value.split(" ")[0]);
         maxTempValue = Math.max(maxTempValue, tempValue);
       }
-      updateGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue, load1Value, 0);
+      updateGaugeElement('storage-' + component.id, storageCount, 'Storage', maxTempValue,
+        load1Value, Number.NaN);
       tempCount++;
     }
     if (tempCount == 0) {
-      updateGaugeElement('storage-' + component.id, storageCount, 'Storage N/A', Number.NaN, load1Value, 0);
+      updateGaugeElement('storage-' + component.id, storageCount, 'Storage N/A', Number.NaN,
+        load1Value, Number.NaN);
     }
   }
 }
