@@ -179,7 +179,7 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
             unit: {
               fontSize: 12,
               fontWeight: 'bolder',
-              padding: [0, 0, -20, 2]
+              padding: [0, 0, -19, 2]
             }
           }
         },
