@@ -52,6 +52,6 @@ body .tooltip {
   --bs-modal-footer-border-width: 0px;
 }
 #modal-preferences.modal .form-check-input:checked {
-  background-color: var(--bs-form-check-bg);
-  border-color: var(--bs-border-width);
+  background-color: var(--bs-secondary);
+  border-color: var(--bs-secondary);
 }

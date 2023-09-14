@@ -32,6 +32,14 @@ function getAxisLineColor() {
   return localStorage.getItem('preference-theme') == 'dark' ? '#43484d' : '#e6ebf8';
 }
 
+function getTempShadowBlur(value) {
+  if (localStorage.getItem('preference-gauge') == 'normal') {
+    return 3;
+  }
+  value = Math.max(Math.min(value, 90), 30) - 30;
+  return 3 + 27 * (value / 70);
+}
+
 function getGaugeTitle(count, text) {
   const match = text.match(/^CPU Core #([0-9]+)$/);
   if (match) {
@@ -90,7 +98,7 @@ function createGauge(element, count, label, tempValue, load1Value, load2Value) {
         animationDuration: animationDuration,
         itemStyle: {
           color: getTempColor(tempValue),
-          shadowBlur: 3,
+          shadowBlur: getTempShadowBlur(tempValue),
           shadowColor: getTempShadowColor(tempValue),
         },
         pointer: {
@@ -296,6 +304,7 @@ function updateGauge(element, count, label, tempValue, load1Value, load2Value) {
       {
         itemStyle: {
           color: color,
+          shadowBlur: getTempShadowBlur(tempValue),
           shadowColor: getTempShadowColor(tempValue),
         },
         anchor: {
@@ -743,6 +752,15 @@ function initializeColorMode() {
   changeColor();
 }
 
+function initializeGaugeMode() {
+  let gauge = localStorage.getItem('preference-gauge');
+  if (!gauge) {
+    gauge = 'normal';
+    localStorage.setItem('preference-gauge', gauge);
+  }
+  $('#preference-gauge').attr('checked', gauge == 'fancy');
+}
+
 function initializeWebServerURL() {
   let url = localStorage.getItem('preference-url');
   if (!url) {
@@ -757,6 +775,10 @@ function changeColorMode(checked) {
   changeColor();
 }
 
+function changeGaugeMode(checked) {
+  localStorage.setItem('preference-gauge', checked ? 'fancy' : 'normal');
+}
+
 document.getElementById('modal-preferences').addEventListener('hidden.bs.modal', (event) => {
   const serverURL = ($('#preference-url').val() || '').trim();
   localStorage.setItem('preference-url', serverURL);
@@ -767,6 +789,7 @@ document.getElementById('modal-preferences').addEventListener('hidden.bs.modal',
 
 $(document).ready(function() {
   initializeColorMode();
+  initializeGaugeMode();
   initializeWebServerURL();
 
   startMonitoring();
