@@ -33,7 +33,7 @@ function getAxisLineColor() {
 }
 
 function getGaugeTitle(count, text) {
-  let match = text.match(/^CPU Core #([0-9]+)$/);
+  const match = text.match(/^CPU Core #([0-9]+)$/);
   if (match) {
     // TODO: multiple CPUs
     return '{value|\uF2D6}\n{n|Core #' + match[1] + '}';
@@ -71,11 +71,11 @@ function createTooltip(element, text) {
 }
 
 function createGauge(element, count, label, tempValue, load1Value, load2Value) {
-  let chart = echarts.init(element, null, {
+  const chart = echarts.init(element, null, {
     renderer: 'svg' // For beautiful zooming
   });
-  let animationDuration = 900; // TODO: Change this value as the interval value is changed.
-  let option = {
+  const animationDuration = 900; // TODO: Change this value as the interval value is changed.
+  const option = {
     series: [
       {
         type: 'gauge',
@@ -334,19 +334,24 @@ function updateGaugeElement(id, count, label, tempValue, load1Value, load2Value)
   updateGauge(gauge, count, label, tempValue, load1Value, load2Value);
 }
 
-function getCPULoadMap(loadProp) {
+function getCPULoadMap(component) {
   const loadMap = {};
-  for (let load of loadProp.Children) {
-    const match = load.Text.match(/^(CPU Core #[0-9]+)(| Thread #([0-9]+))$/);
-    if (!match) {
+  for (let prop of component.Children) {
+    if (!prop.ImageURL.endsWith('/load.png')) {
       continue;
     }
-    const loadValue = Number(load.Value.split(" ")[0]);
-    if (!loadMap[match[1]]) {
-      loadMap[match[1]] = [0, 0];
+    for (let load of prop.Children) {
+      const match = load.Text.match(/^(CPU Core #[0-9]+)(| Thread #([0-9]+))$/);
+      if (!match) {
+        continue;
+      }
+      const loadValue = Number(load.Value.split(" ")[0]);
+      if (!loadMap[match[1]]) {
+        loadMap[match[1]] = [0, 0];
+      }
+      const thread = match[3] ? parseInt(match[3]-1) : 0;
+      loadMap[match[1]][thread] = loadValue;
     }
-    let thread = match[3] ? parseInt(match[3]-1) : 0;
-    loadMap[match[1]][thread] = loadValue;
   }
   return loadMap;
 }
@@ -358,13 +363,7 @@ function createCPUElement(data) {
       continue;
     }
     cpuCount++;
-    let loadMap = {};
-    for (let prop of component.Children) {
-      if (!prop.ImageURL.endsWith('/load.png')) {
-        continue;
-      }
-      loadMap = getCPULoadMap(prop);
-    }
+    const loadMap = getCPULoadMap(component);
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
@@ -388,13 +387,7 @@ function updateCPUElement(data) {
       continue;
     }
     cpuCount++;
-    let loadMap = {};
-    for (let prop of component.Children) {
-      if (!prop.ImageURL.endsWith('/load.png')) {
-        continue;
-      }
-      loadMap = getCPULoadMap(prop);
-    }
+    const loadMap = getCPULoadMap(component);
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
@@ -411,6 +404,29 @@ function updateCPUElement(data) {
   }
 }
 
+function getGPULoad(component) {
+  for (let prop of component.Children) {
+    if (!prop.ImageURL.endsWith('/load.png')) {
+      continue;
+    }
+    for (let load of prop.Children) {
+      if (!load.Text.match(/^GPU Core$/)) {
+        continue;
+      }
+      // Prioritize GPU Core
+      return Number(load.Value.split(" ")[0]);
+    }
+    for (let load of prop.Children) {
+      if (!load.Text.match(/^D3D 3D$/)) {
+        continue;
+      }
+      // Return D3D 3D Load if there is no GPU Core (somehow...)
+      return Number(load.Value.split(" ")[0]);
+    }
+  }
+  return 0;
+}
+
 function createGPUElement(data) {
   let gpuCount = 0;
   for (let component of data.Children[0].Children) {
@@ -420,6 +436,7 @@ function createGPUElement(data) {
       continue;
     }
     gpuCount++;
+    const gpuCoreLoadValue = getGPULoad(component);
     let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
@@ -430,14 +447,15 @@ function createGPUElement(data) {
           continue;
         }
         const tempValue = Number(temp.Value.split(" ")[0]);
+        const load1Value = temp.Text == 'GPU Core' ? gpuCoreLoadValue : 0;
         createGaugeElement('gpu-' + temp.id, gpuCount, temp.Text, tempValue,
-          0, 0, component.Text);
+          load1Value, 0, component.Text);
         tempCount++;
       }
     }
     if (tempCount == 0) {
       createGaugeElement('gpu-' + component.id, gpuCount, 'GPU N/A', Number.NaN,
-        0, 0, component.Text);
+        gpuCoreLoadValue, 0, component.Text);
     }
   }
 }
@@ -451,6 +469,8 @@ function updateGPUElement(data) {
       continue;
     }
     gpuCount++;
+    const gpuCoreLoadValue = getGPULoad(component);
+    let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
         continue;
@@ -460,8 +480,15 @@ function updateGPUElement(data) {
           continue;
         }
         const tempValue = Number(temp.Value.split(" ")[0]);
-        updateGaugeElement('gpu-' + temp.id, gpuCount, temp.Text, tempValue, 0, 0);
+        const load1Value = temp.Text == 'GPU Core' ? gpuCoreLoadValue : 0;
+        updateGaugeElement('gpu-' + temp.id, gpuCount, temp.Text, tempValue,
+          load1Value, 0);
+        tempCount++;
       }
+    }
+    if (tempCount == 0) {
+      updateGaugeElement('gpu-' + component.id, gpuCount, 'GPU N/A', Number.NaN,
+        gpuCoreLoadValue, 0);
     }
   }
 }
@@ -555,7 +582,7 @@ function createStorageElement(data) {
       continue;
     }
     storageCount++;
-    let load1Value = getStorageLoad(component);
+    const load1Value = getStorageLoad(component);
     let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
@@ -587,7 +614,7 @@ function updateStorageElement(data) {
       continue;
     }
     storageCount++;
-    let load1Value = getStorageLoad(component);
+    const load1Value = getStorageLoad(component);
     let tempCount = 0;
     for (let prop of component.Children) {
       if (!prop.ImageURL.endsWith('/temperature.png')) {
@@ -664,7 +691,7 @@ function changeColor() {
   const theme = localStorage.getItem('preference-theme');
   $('html').attr('data-bs-theme', theme);
   $('.gauge').each(function() {
-    let chart = echarts.getInstanceByDom(this);
+    const chart = echarts.getInstanceByDom(this);
     chart.setOption({
       series: [
         {
