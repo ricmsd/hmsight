@@ -19,8 +19,13 @@
   <div id="gauge-container">
   </div>
 
-  <button id="btn-preferences" type="button" class="btn btn-sm" data-bs-toggle="modal"
-    data-bs-target="#modal-preferences"><i class="bi bi-gear"></i></button>
+  <div class="dropdown">
+    <button id="btn-preferences" class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+    <ul class="dropdown-menu">
+      <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modal-preferences">Preferences</a></li>
+      <li><a class="dropdown-item" href="./license.html" target="_blank">Lisences</a></li>
+    </ul>
+  </div>
 
   <div class="modal" id="modal-preferences" 
     data-bs-backdrop="static" data-bs-keyboard="false" 

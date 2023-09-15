@@ -46,6 +46,21 @@ body .tooltip {
   bottom: 0.5rem;
   right: 0.5rem;
   --bs-btn-border-width: 0px;
+  background-color: transparent;
+  color: #999;
+}
+#btn-preferences::after {
+  font-family: 'bootstrap-icons';
+  font-size: 12px;
+  content: '\F5D4';
+  vertical-align: initial;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+}
+.dropdown .dropdown-menu {
+  --bs-dropdown-font-size: 12px;
 }
 #modal-preferences.modal {
   --bs-modal-header-border-width: 0px;
