@@ -781,10 +781,11 @@ function changeGaugeMode(checked) {
 
 document.getElementById('modal-preferences').addEventListener('hidden.bs.modal', (event) => {
   const serverURL = ($('#preference-url').val() || '').trim();
-  localStorage.setItem('preference-url', serverURL);
-
-  clearMonitoring();
-  startMonitoring();
+  if (serverURL != localStorage.getItem('preference-url')) {
+    localStorage.setItem('preference-url', serverURL);
+    clearMonitoring();
+    startMonitoring();
+  }
 });
 
 $(document).ready(function() {
