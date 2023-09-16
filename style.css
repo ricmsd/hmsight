@@ -41,7 +41,7 @@ body .tooltip {
   width: 200px;
   height: 200px;
 }
-#btn-preferences {
+#btn-menu {
   position: fixed;
   bottom: 0.5rem;
   right: 0.5rem;
@@ -49,7 +49,7 @@ body .tooltip {
   background-color: transparent;
   color: #999;
 }
-#btn-preferences::after {
+#btn-menu::after {
   font-family: 'bootstrap-icons';
   font-size: 12px;
   content: '\F5D4';
