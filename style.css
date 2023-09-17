@@ -61,6 +61,7 @@ body .tooltip {
 }
 .dropdown .dropdown-menu {
   --bs-dropdown-font-size: 12px;
+  --bs-dropdown-link-active-bg: var(--bs-secondary);
 }
 #modal-preferences.modal {
   --bs-modal-header-border-width: 0px;
